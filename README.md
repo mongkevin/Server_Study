@@ -138,8 +138,8 @@ applicationScope에 담긴 값: ${applicationScope.scope }
 3. 동등 비교 연산  
 ```jsp
     *EL연산 방식<br>
-		10과 3이 일치합니까?: &{big == small} 또는 ${big eq small }<br>
-		big에 담긴 값이 10과 일치합니까?: &{big == 10} 또는 ${big eq 10 }<br>
+		10과 3이 일치합니까?: ${big == small} 또는 ${big eq small }<br>
+		big에 담긴 값이 10과 일치합니까?: ${big == 10} 또는 ${big eq 10 }<br>
 		
 		sOne과 sTwo가 일치합니까?: ${sOne == sTwo} 또는 ${sOne eq sTwo }<br>
 		<!-- EL에서의 == 비교는 자바에서의 equals()메소드의 기능을 한다 -->
@@ -258,7 +258,7 @@ JSTL의 주요 특징과 장점은 다음과 같다:
 - 표준화: JSTL은 JSP 스펙의 일부로 표준화되어 있으므로 대부분의 JSP 컨테이너(예: Apache Tomcat, WildFly)에서 지원된다.  
 - 로직과 프레젠테이션의 분리: JSTL을 활용하여 비즈니스 로직과 프레젠테이션 로직을 분리하여 MVC 아키텍처를 보다 체계적으로 구현할 수 있다.  
 
-**다운방법**
+**다운방법**  
 1)https://tomcat.apache.org/download-taglibs.cgi  
 2)Standard-1.2.5 - jar파일 4개 다 다운받기  
 3)WEB-INF/lib에 추가하기  
