@@ -878,7 +878,113 @@ servlet에서 데이터 정제과정
 보통 첨부파일을 저장할때 이름을 바꿔서 저장을 하기에 renamePolicy를 따로 두어 사용한다. 
 
 **JSP**  
-
-**servlet**  
-
+form 태그안에 enctype="multipart/form-data"를 기입하여 첨부파일을 첨부할 수 있도록 해준다.
+```jsp
+		<form action="<%=contextPath %>/insert.ph" method="post" id="enroll-form" enctype="multipart/form-data">
+			<!-- 파일 첨부 영역 -->
+			<div id="file-area" align="center">
+				<input type="file" id="file1" name="file1" onchange="loadImg(this,1);" required> <!-- 대표이미지라서 필수입력사항 -->
+				<input type="file" id="file2" name="file2" onchange="loadImg(this,2);">
+				<input type="file" id="file3" name="file3" onchange="loadImg(this,3);">
+				<input type="file" id="file4" name="file4" onchange="loadImg(this,4);">
+			</div>
+			<br><br>
+			
+			<div align="center">
+				<button type="submit">작성하기</button>
+			</div>	
+		</form>
+```
+**Servlet**  
+```java
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		request.setCharacterEncoding("UTF-8");
+		
+		if(ServletFileUpload.isMultipartContent(request)) {
+			//전송용량 제한
+			int maxSize = 10 * 1024 *1024;
+			
+			//저장할 물리적인 경로 알아내기
+			String savePath = request.getSession().getServletContext().getRealPath("resources/photoBoard_files/");
+			
+			//전달된파일명 수저작업 객체 포함시켜 업로드 작업
+			MultipartRequest multiRequest = new MultipartRequest(request, savePath, maxSize, "UTF-8", new MyFileRenamePolicy());
+			
+			//DB에 저장해야할 데이터 추출하기
+			Board b = new Board();
+			b.setBoardWriter(multiRequest.getParameter("userNo"));
+			b.setBoardTitle(multiRequest.getParameter("title"));
+			b.setBoardContent(multiRequest.getParameter("content"));
+			
+			//Attachment에 들어가야할 데이터도 추출하기
+			//여러개의 첨부파일이 있을수 있으니 list에 담아서 가져가기
+			//대표이미지는 필수 입력사항이니 최소 1개는 담기게 된다
+			ArrayList<Attachment> list = new ArrayList<>();
+			
+			for(int i=1; i<=4; i++) {
+				String key = "file"+i;
+				
+				//첨부파일이 있다면 첨부파일 객체 생성 및 데이터 담기
+				if(multiRequest.getOriginalFileName(key)!=null) {
+					Attachment at = new Attachment();
+					at.setOriginName(multiRequest.getOriginalFileName(key));
+					at.setChangeName(multiRequest.getFilesystemName(key));
+					at.setFilePath("resources/photoBoard_files/");
+					
+					//대표이미지와 상세이미지를 구분할 file_level 컬럼값 세팅하기
+					if(i==1) { //대표이미지(file1을 키값으로 가진)
+						at.setFileLevel(1);
+					}else {//상세이미지(대표이미지가 아닌경우)
+						at.setFileLevel(2);
+					}
+					list.add(at);
+				}
+			}
+			int result = new BoardService().insertPhotoBoard(b,list);
+			
+			if(result>0) {
+				request.getSession().setAttribute("alertMsg", "사진게시글 작성 성공");
+				response.sendRedirect(request.getContextPath()+"/list.ph");
+			}else {
+				request.setAttribute("errorMsg", "사진게시글 작성 실패");
+				request.getRequestDispatcher("views/common/error.jsp").forward(request, response);
+				
+			}
+		}
+	}
+```
 **NamePolicy**  
+사진 이름을 업로드되는 시점 시간에 맞춰서 설정되도록 지정해준다.
+```java
+public class MyFileRenamePolicy implements FileRenamePolicy{
+	
+	//파일명 변경 메서드 재정의하기
+	//기존의 파일명을 전달받아 수정작업후 해당 파일명을 반환해주는 메서드
+	
+	@Override
+	public File rename(File originFile) {
+		
+		//원본 파일명("hello.jpg")
+		String originName = originFile.getName();
+		
+		//수정파일명 : 파일업로드된 시간(년월일시분초) + 5자리 랜덤값
+		//확장자 : 그대로
+		//hello.jpg -> 2023040615463012443.jpg
+		
+		//1.파일 업로드 시간(년월일시분초) - String currentTime
+		String currentTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+		
+		//2.랜덤 숫자 5자리
+		int ranNum = (int)(Math.random()*90000) + 10000;
+		
+		//3.원본파일 확장자명 추출
+		//파일명에서 가장 마지막 . 기준으로 확장자 추출
+		String ext = originName.substring(originName.lastIndexOf("."));
+		
+		String changeName = currentTime+ranNum+ext;
+		//원본 파일을 파일명 변경하여 전달
+		return new File(originFile.getParent(), changeName);
+	}
+	
+}
+```
