@@ -988,3 +988,74 @@ public class MyFileRenamePolicy implements FileRenamePolicy{
 	
 }
 ```
+
+## MyBatis_Test
+ 
+마이바티스(MyBatis)는 자바 언어를 위한 오픈 소스 ORM(Object-Relational Mapping) 프레임워크이다. ORM은 관계형 데이터베이스와 객체 지향 프로그래밍 언어 간의 데이터를 변환하고 연결하는 기술을 의미한다.  
+마이바티스는 데이터베이스와 애플리케이션 간의 데이터 접근을 단순화하고자 개발되었다. SQL 쿼리를 직접 작성하여 데이터베이스에 접근하는 방식을 사용하며, 쿼리와 자바 코드 사이의 매핑을 XML 파일로 처리할 수 있다.   
+이를 통해 개발자들은 보다 직관적이고 유연한 방식으로 데이터베이스와 상호 작용할 수 있다.  
+
+마이바티스의 주요 특징은 다음과 같다:  
+
+1. **간결성**: SQL을 XML로 매핑하여 복잡한 JDBC(Java Database Connectivity) 코드를 줄여준다.  
+2. **유연성**: 다양한 데이터베이스와 연동이 가능하며, 복잡한 쿼리도 쉽게 작성할 수 있다.  
+3. **성능**: 캐시 기능과 배치 작업을 지원하여 높은 성능을 제공한다.  
+4. **확장성**: 확장성이 높고 개발자들이 원하는 방식으로 커스터마이징할 수 있다.  
+
+마이바티스는 대표적으로 스프링(Spring)과 함께 사용되는 경우가 많으며, 스프링과 통합하여 데이터베이스 연동을 더욱 간편하게 처리할 수 있다.   
+다른 ORM 프레임워크인 Hibernate와 비교하여 좀 더 직접적인 SQL 제어를 원하는 개발자들에게 인기가 있다.
+
+**매퍼 경로와 JDBC연결**
+```jsp
+<configuration>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+	<typeAliases>
+		<typeAlias type="com.kh.test.board.model.vo.Board"
+			alias="board" />
+	</typeAliases>
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<property name="driver"
+					value="oracle.jdbc.driver.OracleDriver" />
+				<property name="url"
+					value="jdbc:oracle:thin:@localhost:1521:xe" />
+				<property name="username" value="MYBATIS" />
+				<property name="password" value="MYBATIS" />
+			</dataSource>
+		</environment>
+	</environments>
+	<mappers>
+		<mapper resource="/mappers/board-mapper.xml" />
+	</mappers>
+</configuration>
+```
+1. typeAliases: 복잡한 자바 클래스명이나 패키지명을 간단한 별칭(alias)으로 대체하여 사용할 수 있게 해주는 기능이다. 자바 클래스명이 길거나 복잡한 경우에는 매번 긴 이름을 사용해야 하는 번거로움이 있을 수 있는데, 이런 경우  
+   typeAliases를 사용하여 간단한 별칭을 지정함으로써 코드를 더 간결하게 만들 수 있다.
+
+2. pagination: 페이지를 부여하는 방식
+
+```java
+		int currentPage = Integer.parseInt(request.getParameter("currentPage")); //현재 페이지 가지오기
+		int listCount = sqlSession.selectOne("boardMapper.selectListCount");
+		int boardLimit = 5; 
+		int pageLimit = 3;
+		int maxPage = (int)(Math.ceil((double)listCount / boardLimit)); 
+		int startPage = ((currentPage-1) / pageLimit) * pageLimit + 1;
+		int endPage = startPage + pageLimit-1;
+		if(endPage>maxPage) {
+			endPage = maxPage;
+		}
+		
+		PageInfo pi = new PageInfo(currentPage,boardLimit,listCount,pageLimit,maxPage,startPage,endPage);
+		
+	        int limit = boardLimit;
+		int offset = (currentPage-1)*limit;
+		RowBounds rowBounds = new RowBounds(offset,limit); //마이바티스에서 제공하는 RowBounds
+		ArrayList<Board> bList = sqlSession.selectList("boardMapper.selectList",null,rowBounds);
+```
+
+~~마이바티스에 대한 더 자세한 이야기:[Spring_FrameWork_Study](https://github.com/mongkevin/Spring_FrameWork_Study)~~
